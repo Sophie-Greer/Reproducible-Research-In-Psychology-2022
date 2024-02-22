@@ -1,0 +1,117 @@
+---
+title: "Registered Report Data Analysis"
+output: html_document
+---
+
+```{r setup}
+#install.packages("formatR", "hexbin", "mgcv", "maps", "mapproj", "rmarkdown", "skimr", "tidyverse", "dplyr", "kableExtra", "pander")
+
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(forcats)
+library(skimr)
+```
+
+## Load the data & get it ready for analysis
+
+```{r load data}
+## 116 total subjects
+
+my_data <- read.csv("sophie_report_data.csv")
+```
+
+```{r data}
+## 116 total subjects
+
+summary(my_data)
+```
+
+```{r tidy the data}
+my_data %>% 
+  select("sexuality", "gender", "healthcare_quality")
+```
+
+```{r skimr}
+skim(my_data)
+```
+
+## Exploratory analysis
+
+```{r descriptive statistics}
+my_data %>% 
+  group_by(sexuality, gender) %>% 
+    summarise(count = n(),
+              mean = mean(healthcare_quality), sd = sd(healthcare_quality), 
+              min = min(healthcare_quality), max = max(healthcare_quality), 
+              var = var(healthcare_quality)) %>% 
+  knitr::kable(format = "html", digits = 2, caption = "Descriptive Statistics Stratified by Sexuality and Gender") 
+
+my_data %>% 
+  group_by(sexuality) %>% 
+    summarise(count = n(),
+              mean = mean(healthcare_quality), sd = sd(healthcare_quality), 
+              min = min(healthcare_quality), max = max(healthcare_quality), 
+              var = var(healthcare_quality)) %>% 
+  knitr::kable(format = "html", digits = 2, caption = "Descriptive Statistics Stratified by Sexuality")
+  
+my_data %>% 
+  group_by(gender) %>% 
+    summarise(count = n(),
+              mean = mean(healthcare_quality), sd = sd(healthcare_quality), 
+              min = min(healthcare_quality), max = max(healthcare_quality), 
+              var = var(healthcare_quality)) %>% 
+  knitr::kable(format = "html", digits = 2, caption = "Descriptive Stratified by Gender")
+```
+
+## Data visualization
+
+```{r boxplot 1}
+## Quality of healthcare stratified by sexuality
+
+my_data %>%
+  ggplot() + 
+    geom_boxplot(mapping = aes(x = sexuality, y = healthcare_quality), fill = "aquamarine", color = "darkmagenta") +
+    labs(
+      x = "Sexuality", 
+      y = "Quality of Healthcare", 
+      title = "Quality of Healthcare Stratified by Patients' Sexualities"
+    )
+```
+
+```{r boxplot 2}
+## Quality of healthcare stratified by gender
+
+my_data %>%
+  ggplot() + 
+    geom_boxplot(mapping = aes(x = gender, y = healthcare_quality), fill = "darkolivegreen1", color = "lightskyblue") +
+    labs(
+      x = "Gender", 
+      y = "Quality of Healthcare", 
+      title = "Quality of Healthcare Stratified by Patients' Gender Identities"
+    )
+```
+
+```{r grouped barplot 1}
+## Quality of healthcare stratified by sexuality and gender
+
+my_data %>%
+  ggplot(aes(x = sexuality, y = healthcare_quality, fill = gender)) +
+  geom_bar(stat = "summary", position = "dodge") +
+    labs(
+      x = "Sexuality", 
+      y = "Quality of Healthcare", 
+      title = "Quality of Healthcare Stratified by Patients' Sexualities and Gender Identities"
+    )
+```
+
+## Data analysis 
+
+```{r ANOVA}
+res.aov2 <- aov(healthcare_quality ~ sexuality * gender, data = my_data)
+summary(res.aov2)
+```
+
+```{r TukeyHSD}
+TukeyHSD(res.aov2)
+```
